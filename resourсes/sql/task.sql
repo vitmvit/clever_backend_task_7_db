@@ -29,7 +29,7 @@ LIMIT 10
 
 -- 5. Найти все рейсы, у которых нет забронированных мест в бизнес-классе (fare_conditions = 'Business')
 SELECT f.flight_no
-FROM flights f
+FROM flights f:wq
          JOIN ticket_flights tf ON f.flight_id = tf.flight_id
 WHERE tf.fare_conditions IS NULL
    OR tf.fare_conditions <> 'Business';
@@ -160,9 +160,9 @@ WITH flight_counts AS (SELECT ac."aircraft_code",
                               f."arrival_airport",
                               a."airport_name",
                               a."city",
-                              COUNT(f."flight_id")                                                      AS flight_count,
+                              COUNT(f."flight_id")                                                                   AS flight_count,
                               ROW_NUMBER()
-                              OVER (PARTITION BY ac."aircraft_code" ORDER BY COUNT(f."flight_id") DESC) AS rn
+                              OVER (PARTITION BY ac."aircraft_code" ORDER BY COUNT(f."flight_id") DESC)              AS rn
                        FROM "bookings"."flights" f
                                 JOIN "aircrafts" ac ON f."aircraft_code" = ac."aircraft_code"
                                 JOIN "airports" a ON f."arrival_airport" = a."airport_code"
