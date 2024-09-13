@@ -1,3 +1,4 @@
+
 -- 1. Вывести к каждому самолету класс обслуживания и количество мест этого класса
 SELECT a.aircraft_code, s.fare_conditions, COUNT(s.seat_no) AS total_seats
 FROM aircrafts a
