@@ -9,8 +9,7 @@ SELECT a.model, COUNT(s.seat_no) AS total_seats
 FROM aircrafts a
          JOIN seats s ON a.aircraft_code = s.aircraft_code
 GROUP BY a.model
-ORDER BY total_seats DESC
-LIMIT 3
+ORDER BY total_seats DESC LIMIT 3
 
 -- 3. Найти все рейсы, которые задерживались более 2 часов
 SELECT flights.flight_no
@@ -24,8 +23,7 @@ SELECT t.passenger_name, t.contact_data
 FROM tickets t
          JOIN ticket_flights tf ON t.ticket_no = tf.ticket_no
 WHERE tf.fare_conditions = 'Business'
-ORDER BY t.ticket_no DESC
-LIMIT 10
+ORDER BY t.ticket_no DESC LIMIT 10
 
 -- 5. Найти все рейсы, у которых нет забронированных мест в бизнес-классе (fare_conditions = 'Business')
 SELECT f.flight_no
@@ -88,8 +86,7 @@ FROM flights f
          LEFT JOIN ticket_flights tf ON f.flight_id = tf.flight_id
 WHERE dep_airport.city = 'Екатеринбург'
   AND arr_airport.city = 'Москва'
-ORDER BY f.scheduled_departure
-LIMIT 1;
+ORDER BY f.scheduled_departure LIMIT 1;
 
 -- 13. Вывести самый дешевый и дорогой билет и стоимость (в одном результирующем ответе)
 SELECT MIN(amount) AS min_price, MAX(amount) AS max_price
@@ -121,14 +118,46 @@ VALUES ('Joh', 'Doea', 'johdoea@example.com', '1265467892'),
        ('Sofi', 'Sad', 'sofisad@example.com', '0987654445'),
        ('Ada', 'Adams', 'adaadams@example.com', '0934554321'),
        ('Kim', 'Loki', 'kimloki@example.com', '7657654321')
-
-INSERT INTO orders (customer_id, quantity)
-VALUES (1, 5),
-       (2, 4),
-       (3, 7),
-       (4, 8),
-       (5, 2)
+    INSERT
+INTO orders (customer_id, quantity)
+VALUES (1, 5), (2, 4), (3, 7), (4, 8), (5, 2)
 
 -- 17. Удалить таблицы
 DROP TABLE IF EXISTS orders
 DROP TABLE IF EXISTS customer
+
+-- 18. Вывести информацию о вылете с наибольшей суммарной стоимостью билетов
+SELECT f."flight_id",
+       f."flight_no",
+       f."scheduled_departure",
+       f."scheduled_arrival",
+       SUM(tf."amount") AS total_ticket_value
+FROM "bookings"."ticket_flights" tf
+         JOIN "bookings"."flights" f ON tf."flight_id" = f."flight_id"
+GROUP BY f."flight_id", f."flight_no", f."scheduled_departure", f."scheduled_arrival"
+ORDER BY total_ticket_value DESC LIMIT 1;
+
+-- 19. Найти модель самолета, принесшую наибольшую прибыль (наибольшая суммарная стоимость билетов). Вывести код модели, информацию о модели и общую стоимость
+SELECT ac."model", ac."aircraft_code", SUM(tf."amount") AS total_revenue
+FROM "bookings"."ticket_flights" tf
+         JOIN "bookings"."flights" f ON tf."flight_id" = f."flight_id"
+         JOIN "aircrafts" ac ON f."aircraft_code" = ac."aircraft_code"
+GROUP BY ac."aircraft_code", ac."model"
+ORDER BY total_revenue DESC LIMIT 1;
+
+-- 20. Найти самый частый аэропорт назначения для каждой модели самолета. Вывести количество вылетов, информацию о модели самолета, аэропорт назначения, город
+WITH flight_counts AS (SELECT ac."aircraft_code",
+                              ac."model",
+                              f."arrival_airport",
+                              a."airport_name",
+                              a."city",
+                              COUNT(f."flight_id") AS flight_count,
+                              ROW_NUMBER()            OVER (PARTITION BY ac."aircraft_code" ORDER BY COUNT(f."flight_id") DESC) AS rn
+                       FROM "bookings"."flights" f
+                                JOIN "aircrafts" ac ON f."aircraft_code" = ac."aircraft_code"
+                                JOIN "airports" a ON f."arrival_airport" = a."airport_code"
+                       GROUP BY ac."aircraft_code", ac."model", f."arrival_airport", a."airport_name", a."city")
+
+SELECT "aircraft_code", "model", "arrival_airport", "airport_name", "city", "flight_count"
+FROM flight_counts
+WHERE rn = 1;
